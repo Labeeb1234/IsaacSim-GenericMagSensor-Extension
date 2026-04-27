@@ -1,0 +1,82 @@
+{
+    "GenericMagSensorNode": {
+        "version": 1,
+        "icon": "icons/hemker.svg",
+        "singleton": true,
+        "description": [
+            "This node is a plugin to simulate a generic magnetometer sensor"
+        ],
+        "metadata": {
+            "uiName": "Generic Mag Sensor"
+        },
+        "categories": {"GenericMagSensor": "Nodes is a simple generic mag sensor model for simulation only"},
+        "inputs": {
+            "execIn": {
+                "type": "execution",
+                "description": "The input execution port."
+            },
+            "time": {
+                "type": "double",
+                "description": "The global playback time in seconds.",
+                "uiName": "Time"
+            },
+            "sensorBodyLink":{
+                "type": "target",
+                "description": "Sensor Body prim (Rigid Body) to act the body holding the sensor",
+                "uiName": "Sensor Body Prim",
+                "metadata": {
+                    "allowMultiInputs": "0"
+                }
+            },
+            "rateMag": {
+                "type": "int",
+                "description": "The sampling frequency in Hz for Magnetometer.",
+                "default": 100,
+                "minimum": 0,
+                "uiName": "Rate Magnetometer"
+            },
+            "homeCoordinate": {
+                "type": "vectorf[3]",
+                "description": "The WGS84 coordinate Latitude [deg], Longitude [deg], Altitude [m].",
+                "uiName": "Home Coordinate",
+                "default": [1.4404549720351443, 103.6161149686668, 24.0]
+            }
+        },
+        "state": {
+            "systemId": {
+                "type": "uchar",
+                "description": "System ID - unique sensor id",
+                "metadata": {
+                    "hidden": "true"
+                }
+            },
+            "magnetometerNoiseDensity": {
+                "type" : "float",
+                "description" : "Magnetometer noise density [gauss / sqrt(hz)]",
+                "metadata": {
+                    "hidden": "true"
+                }
+            },
+            "magnetometerRandomWalk": {
+                "type" : "float",
+                "description" : "Magnetometer bias random walk [gauss * sqrt(hz)]",
+                "metadata": {
+                    "hidden": "true"
+                }
+            },
+            "magnetometerBiasCorrelationTime": {
+                "type" : "float",
+                "description" : "Magnetometer bias correlation time constant [s]",
+                "metadata": {
+                    "hidden": "true"
+                }
+            }
+        },
+        "outputs": {
+            "magneticFieldVector": {
+                "type": "vectorf[3]",
+                "description": "Raw Magnetic field vector[X, Y, Z] from sensor (includes earth mag fields+other mag data collected from the environment as noise) in Gauss"
+            }
+        }
+    }
+}
