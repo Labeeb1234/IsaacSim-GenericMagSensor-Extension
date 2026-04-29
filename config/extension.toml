@@ -15,8 +15,8 @@ description = "a custom magnetometer sensor for isaacsim"
 authors = ["labeeb"]
 changelog = "docs/CHANGELOG.md"
 readme = "docs/README.md"
-preview_image = "data/hemker.png"
-icon = "data/hemker.png"
+preview_image = "data/hemker.jpg"
+icon = "data/hemker.jpg"
 
 [[python.module]]
 name = "isaac.generic.mag_sensor"

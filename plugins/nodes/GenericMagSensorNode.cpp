@@ -1,4 +1,4 @@
-#include <GenericMagSensorDatabase.h>
+#include <GenericMagSensorNodeDatabase.h>
 #include "custom_mag_sensor.hpp"
 
 #include <omni/timeline/ITimeline.h>
@@ -70,7 +70,7 @@ public:
         const auto& home = db.inputs.homeCoordinate(); // hardcoded for now the home of the drone is taken as the home coordinate for the mag sensor
         const auto &rate_mag = db.inputs.rateMag();
         const auto &sensor_in = db.inputs.sensorBodyLink();
-        auto &mag_data_out = db.outpus.magenticFieldVector();
+        auto &mag_data_out = db.outputs.magneticFieldVector();
 
         // inputs sanity checks and fixes
         if (sensor_in.empty())
@@ -86,7 +86,7 @@ public:
         omni::fabric::PathC sensorPath = sensor_in[0];
         if(!state.m_sensor_body_->isSensorBodyPathEqual(sensorPath)){
             if(!state.m_sensor_body_->loadSensorBody(sensorPath)){
-                CARB_LOG_WARN("Failed to load sensor body link at path: %s. Please check if the path is correct and the prim has RigidBody API.", sensorPath.GetString());
+                CARB_LOG_WARN("Failed to load sensor body link at path.");
                 return false;
             }
         }
@@ -100,11 +100,11 @@ public:
             uint64_t mag_elapsed = current_time_us - state.mag_last_sampled_us_;
             if(mag_elapsed >= mag_period_us){
                 double dt = mag_elapsed * 1e-6;
-                state.m_mag_->sample(motion, home[0], home[1], dt);
+                state.mag_sensor_->sample(motion, home[0], home[1], dt);
                 state.mag_last_sampled_us_ = current_time_us;
             }
         }
-        auto mag_data = state.m_mag_->getMagReadings();
+        auto mag_data = state.mag_sensor_->getMagReadings();
         for(int idx = 0; idx < 3; idx++){
             mag_data_out[idx] = mag_data.mag_field_noisy[idx];
         }

@@ -43,6 +43,9 @@ public:
         const float dt = static_cast<float>(delta_time);
 
 		const auto pos = motion.translate;
+        
+        std::cout << "sensor body link pos: [" << motion.translate[0] << "," << motion.translate[1] << "," << motion.translate[2] << "]" << std::endl;
+        
         const auto latlon = reprojectEarth(
 			pos,
 			latitude * M_PI / 180.0f,   // convert to radian

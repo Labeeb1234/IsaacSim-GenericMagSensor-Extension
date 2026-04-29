@@ -1,7 +1,7 @@
 {
     "GenericMagSensorNode": {
         "version": 1,
-        "icon": "icons/hemker.svg",
+        "icon": "icons/magnet.svg",
         "singleton": true,
         "description": [
             "This node is a plugin to simulate a generic magnetometer sensor"

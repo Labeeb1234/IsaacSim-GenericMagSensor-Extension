@@ -13,9 +13,10 @@
 #include <usdrt/scenegraph/usd/sdf/path.h>
 #include <usdrt/scenegraph/usd/usd/attribute.h>
 #include <usdrt/gf/vec.h>
-
+#include <usdrt/scenegraph/base/gf/matrix4d.h>
 #include <usdrt/scenegraph/usd/usdPhysics/rigidBodyAPI.h>
-#include <usdrt/scenegraph/usd/physxSchema/physxDeformableAPI.h>
+#include <usdrt/scenegraph/usd/usdGeom/xformable.h>
+#include <usdrt/scenegraph/usd/rt/xformable.h>
 
 #include <algorithm>
 #include <vector>
@@ -27,6 +28,7 @@
 #include <array>
 #include <random>
 #include <iostream>
+#include <iomanip>
 
 #include "math_utils.hpp"
 
@@ -52,11 +54,13 @@ public:
         usdrt::GfVec3f body_drag_coef_{0.0, 0.0, 0.0}; // optional (the body is quite small)
     };
     struct SensorBodyMotion{
-        usdrt::GfVec3d translate_{0.0, 0.0, 0.0}; // sensor body pos in [m]
+        usdrt::GfVec3d translate{0.0, 0.0, 0.0}; // sensor body pos in [m]
         usdrt::GfQuatd orient{1.0, 0.0, 0.0, 0.0}; // sensor body orientation in quaternions
     };
 
     const void reset(){
+        sensor_rtxform_.ClearWorldXform();
+        sensor_rtxform_ = usdrt::RtXformable{};
         sensor_body_link_ = usdrt::UsdPrim{nullptr};
     }
 
@@ -71,15 +75,18 @@ public:
             return false;
         }
 
-        const usdrt::TfToken rigidBodyAPI = usdrt::UsdPhysicsRigidBodyAPI::_GetStaticTfType();
-        std::string sensor_link_name = "mag_sensor";
-        if(prim.HasAPI(rigidBodyAPI) && (prim.GetName().GetText() == sensor_link_name)){
+        std::regex pattern(R"(^mag_sensor_\d{2}$)");        
+        if(prim.IsA(usdrt::UsdGeomXformable::_GetStaticTfType()) && (std::regex_match(prim.GetName().GetText(), pattern))){
             sensor_body_link_ = prim;
-            return initSensorBody();
+            setRtXformableAPI();
+            if(prim.HasAPI(usdrt::UsdPhysicsRigidBodyAPI::_GetStaticTfType())){
+                return initSensorBody();
+            }
+            return true;
         }else{
             return false;
         }
-        CARB_LOG_WARN("%s is not a valid sensor body link or does not have RigidBody API.", path.c_str());
+        CARB_LOG_WARN("%s is not a valid sensor body link or does not have Xformable API.", path.c_str());
         return false;
     }
 
@@ -96,14 +103,22 @@ public:
         if(!sensor_body_link_.IsValid()){
             return;
         }
+        if(!sensor_rtxform_.HasWorldXform()){
+            return;
+        }
+        // local coordinates
         sensor_body_link_.GetAttribute(usdrt::TfToken("xformOp:translate")).Get<usdrt::GfVec3d>(&motions.translate);
         sensor_body_link_.GetAttribute(usdrt::TfToken("xformOp:orient")).Get<usdrt::GfQuatd>(&motions.orient);
+        // world coordinate based motions
+        usdrt::GfVec3d pos;
+        sensor_rtxform_.GetWorldPositionAttr().Get<usdrt::GfVec3d>(&pos);
+        std::cout << "check pos: [" << pos[0] << ", " << pos[1] << ", " << pos[2] << "]" << std::endl;
     }
-
 
 
 private:
     usdrt::UsdPrim sensor_body_link_;
+    usdrt::RtXformable sensor_rtxform_;
     SensorBodyParamters parameters_;
 
     /**
@@ -114,7 +129,18 @@ private:
         setMassAndInertia();
         return true;
     }
-    
+
+    void setRtXformableAPI(){
+        if(!sensor_body_link_.IsValid()){return;}
+        sensor_rtxform_ = usdrt::RtXformable(sensor_body_link_);
+        bool set_world_xform = sensor_rtxform_.SetWorldXformFromUsd();
+        if(set_world_xform){
+           CARB_LOG_INFO("World Xform from usd created world poses query for sensor enabled!"); 
+        }else{
+            CARB_LOG_WARN("Failed to initialize world transform from USD.");
+        }
+    }
+
     void setMassAndInertia(){
         if(!sensor_body_link_.IsValid()){
             return;
