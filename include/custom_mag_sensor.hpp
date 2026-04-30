@@ -42,10 +42,11 @@ public:
         std::normal_distribution<float> normal_dist(0.0f, 1.0f);
         const float dt = static_cast<float>(delta_time);
 
-		const auto pos = motion.translate;
-        
-        std::cout << "sensor body link pos: [" << motion.translate[0] << "," << motion.translate[1] << "," << motion.translate[2] << "]" << std::endl;
-        
+		const auto pos = motion.global_translate;
+        // std::cout << "sensor body link pos: [" << motion.global_translate[0] << "," << motion.global_translate[1] << "," << motion.global_translate[2] << "]" << std::endl;
+        // double real = motion.global_orient.GetReal();
+        // usdrt::GfVec3d imag = motion.global_orient.GetImaginary();
+        // std::cout << "sensor body link orient(w,x,y,z): [" << real << "," << imag[0] << "," << imag[1] << "," << imag[2] << "]" << std::endl;
         const auto latlon = reprojectEarth(
 			pos,
 			latitude * M_PI / 180.0f,   // convert to radian

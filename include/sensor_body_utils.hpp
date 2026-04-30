@@ -54,8 +54,10 @@ public:
         usdrt::GfVec3f body_drag_coef_{0.0, 0.0, 0.0}; // optional (the body is quite small)
     };
     struct SensorBodyMotion{
-        usdrt::GfVec3d translate{0.0, 0.0, 0.0}; // sensor body pos in [m]
+        usdrt::GfVec3d translate{0.0, 0.0, 0.0}; // sensor body pos in [m] (local)
         usdrt::GfQuatd orient{1.0, 0.0, 0.0, 0.0}; // sensor body orientation in quaternions
+        usdrt::GfVec3d global_translate{0.0, 0.0, 0.0}; // sensor body pos wrt world frame in [m]
+        usdrt::GfQuatd global_orient{1.0, 0.0, 0.0, 0.0}; // sensor orientation in quaternions wrt world frame
     };
 
     const void reset(){
@@ -103,16 +105,15 @@ public:
         if(!sensor_body_link_.IsValid()){
             return;
         }
-        if(!sensor_rtxform_.HasWorldXform()){
-            return;
-        }
         // local coordinates
         sensor_body_link_.GetAttribute(usdrt::TfToken("xformOp:translate")).Get<usdrt::GfVec3d>(&motions.translate);
         sensor_body_link_.GetAttribute(usdrt::TfToken("xformOp:orient")).Get<usdrt::GfQuatd>(&motions.orient);
         // world coordinate based motions
-        usdrt::GfVec3d pos;
-        sensor_rtxform_.GetWorldPositionAttr().Get<usdrt::GfVec3d>(&pos);
-        std::cout << "check pos: [" << pos[0] << ", " << pos[1] << ", " << pos[2] << "]" << std::endl;
+        // set world x form rt to force updates the world coords from the loaded fabric stage
+        if(sensor_rtxform_.SetWorldXformFromUsd()){
+            sensor_rtxform_.GetWorldPositionAttr().Get<usdrt::GfVec3d>(&motions.global_translate);
+            sensor_rtxform_.GetWorldOrientationAttr().Get<usdrt::GfQuatd>(&motions.global_orient);
+        }
     }
 
 
@@ -133,11 +134,11 @@ private:
     void setRtXformableAPI(){
         if(!sensor_body_link_.IsValid()){return;}
         sensor_rtxform_ = usdrt::RtXformable(sensor_body_link_);
-        bool set_world_xform = sensor_rtxform_.SetWorldXformFromUsd();
-        if(set_world_xform){
-           CARB_LOG_INFO("World Xform from usd created world poses query for sensor enabled!"); 
+        // TODO: Add create world pose and orient attr funcs to initialze with proper values instead of garbage values (makes it stable)
+        if(sensor_rtxform_.SetWorldXformFromUsd()){
+            CARB_LOG_INFO("world x_form set!");
         }else{
-            CARB_LOG_WARN("Failed to initialize world transform from USD.");
+            CARB_LOG_WARN("world x_form not set!");
         }
     }
 
